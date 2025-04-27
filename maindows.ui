@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>FCFS Scheduling Simulator</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QGroupBox" name="inputGroupBox">
+      <property name="title">
+       <string>Add Process</string>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="idLabel">
+         <property name="text">
+          <string>Process ID:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="processIdSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>999</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="arrivalLabel">
+         <property name="text">
+          <string>Arrival Time:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="arrivalTimeSpinBox">
+         <property name="maximum">
+          <number>999</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="burstLabel">
+         <property name="text">
+          <string>Burst Time:</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="burstTimeSpinBox">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>999</number>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="addButton">
+         <property name="text">
+          <string>Add Process</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTableWidget" name="processTable">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>150</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>200</height>
+       </size>
+      </property>
+      <column>
+       <property name="text">
+        <string>Process ID</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Arrival Time</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Burst Time</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QPushButton" name="startButton">
+        <property name="text">
+         <string>Start Simulation</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="resetButton">
+        <property name="text">
+         <string>Reset</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="currentTimeLabel">
+        <property name="text">
+         <string>Current Time: 0</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="ganttGroupBox">
+      <property name="title">
+       <string>Gantt Chart</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QGraphicsView" name="ganttChartView">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>100</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="resultGroupBox">
+      <property name="title">
+       <string>Results</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QTableWidget" name="resultTable">
+         <column>
+          <property name="text">
+           <string>Process ID</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Waiting Time</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Turnaround Time</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Completion Time</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Response Time</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="avgWaitingTimeLabel">
+         <property name="text">
+          <string>Average Waiting Time: 0.00</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="avgTurnaroundTimeLabel">
+         <property name="text">
+          <string>Average Turnaround Time: 0.00</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1000</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
