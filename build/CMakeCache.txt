@@ -306,6 +306,9 @@ QT_ADDITIONAL_PACKAGES_PREFIX_PATH:STRING=
 //The directory containing a CMake configuration file for QT.
 QT_DIR:PATH=C:/Qt/6.9.0/mingw_64/lib/cmake/Qt6
 
+//Force a lower minimum CMake version for Qt
+QT_FORCE_MIN_CMAKE_VERSION_FOR_USING_QT:BOOL=OFF
+
 QT_QMAKE_TARGET_MKSPEC:STRING=win32-g++
 
 //No help, variable specified on the command line.

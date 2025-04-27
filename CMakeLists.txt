@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.20)
+
+# Add option to force lower CMake version if needed (addresses the specific error)
+option(QT_FORCE_MIN_CMAKE_VERSION_FOR_USING_QT "Force a lower minimum CMake version for Qt" "3.20")
+if(QT_FORCE_MIN_CMAKE_VERSION_FOR_USING_QT)
+    set(QT_FORCE_MIN_CMAKE_VERSION_FOR_USING_QT ${QT_FORCE_MIN_CMAKE_VERSION_FOR_USING_QT} CACHE STRING "Force minimum CMake version for Qt" FORCE)
+endif()
 
 project(FCFSSchedulerSimulation VERSION 1.0.0 LANGUAGES CXX)
 
@@ -6,17 +12,13 @@ project(FCFSSchedulerSimulation VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find required Qt packages
-find_package(Qt6 COMPONENTS Core Widgets Charts REQUIRED)
-# Fallback to Qt5 if Qt6 not found
-if (NOT Qt6_FOUND)
-    find_package(Qt5 COMPONENTS Core Widgets Charts REQUIRED)
-endif()
-
 # Configure Qt options
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+
+# Find required Qt packages
+find_package(Qt6 COMPONENTS Core Widgets Charts REQUIRED)
 
 # Define source files
 set(SOURCES
@@ -31,9 +33,9 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Link libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    Qt::Core
-    Qt::Widgets
-    Qt::Charts
+    Qt6::Core
+    Qt6::Widgets
+    Qt6::Charts
 )
 
 # Set include directories
