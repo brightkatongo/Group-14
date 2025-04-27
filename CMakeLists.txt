@@ -1,6 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 
 project(FCFSSimulation LANGUAGES CXX)
+
+# Force Qt to work with CMake 3.20
+set(QT_FORCE_MIN_CMAKE_VERSION_FOR_USING_QT 3.20)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 

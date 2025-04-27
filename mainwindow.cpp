@@ -6,6 +6,7 @@
 #include <QGraphicsRectItem>
 #include <QGraphicsTextItem>
 #include <QGraphicsLineItem>
+#include <QHeaderView>  // Add this include for QHeaderView
 #include <QDebug>
 #include <algorithm>
 
@@ -23,6 +24,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->processTable->setColumnCount(7);
     ui->processTable->setHorizontalHeaderLabels({"Process ID", "Arrival Time", "Burst Time", 
                                               "Completion Time", "Turnaround Time", "Waiting Time", "Remaining Time"});
+    
+    // Make the table headers stretch to fill available space
+    ui->processTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     
     // Set up the simulation timer
     simulationTimer = new QTimer(this);

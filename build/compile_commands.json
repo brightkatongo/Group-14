@@ -1,7 +1,7 @@
 [
 {
   "directory": "C:/Users/brigh/Desktop/CS CODES/Group-14/build",
-  "command": "c:\\Qt\\Tools\\mingw1310_64\\bin\\g++.exe -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -I. -I../ -IFCFSScheduler_autogen/include -isystem C:/Qt/6.9.0/mingw_64/include/QtCore -isystem C:/Qt/6.9.0/mingw_64/include -isystem C:/Qt/6.9.0/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.9.0/mingw_64/include/QtWidgets -isystem C:/Qt/6.9.0/mingw_64/include/QtGui -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -o CMakeFiles\\FCFSScheduler.dir\\FCFSScheduler_autogen\\mocs_compilation.cpp.obj -c \"C:\\Users\\brigh\\Desktop\\CS CODES\\Group-14\\build\\FCFSScheduler_autogen\\mocs_compilation.cpp\"",
-  "file": "C:/Users/brigh/Desktop/CS CODES/Group-14/build/FCFSScheduler_autogen/mocs_compilation.cpp"
+  "command": "c:\\Qt\\Tools\\mingw1310_64\\bin\\g++.exe -DMINGW_HAS_SECURE_API=1 -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -I. -I../ -IFCFSSimulation_autogen/include -isystem C:/Qt/6.9.0/mingw_64/include/QtCore -isystem C:/Qt/6.9.0/mingw_64/include -isystem C:/Qt/6.9.0/mingw_64/mkspecs/win32-g++ -isystem C:/Qt/6.9.0/mingw_64/include/QtWidgets -isystem C:/Qt/6.9.0/mingw_64/include/QtGui -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -o CMakeFiles\\FCFSSimulation.dir\\FCFSSimulation_autogen\\mocs_compilation.cpp.obj -c \"C:\\Users\\brigh\\Desktop\\CS CODES\\Group-14\\build\\FCFSSimulation_autogen\\mocs_compilation.cpp\"",
+  "file": "C:/Users/brigh/Desktop/CS CODES/Group-14/build/FCFSSimulation_autogen/mocs_compilation.cpp"
 }
 ]
