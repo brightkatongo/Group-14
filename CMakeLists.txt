@@ -1,56 +1,51 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.14)
 
-project(FCFSSimulation LANGUAGES CXX)
+project(FCFSSchedulerSimulation VERSION 1.0.0 LANGUAGES CXX)
 
-# Force Qt to work with CMake 3.20
-set(QT_FORCE_MIN_CMAKE_VERSION_FOR_USING_QT 3.20)
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-
-set(CMAKE_CXX_STANDARD 11)
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# QtCreator supports the following variables for Android, which are identical to qmake Android variables.
-# Check https://doc.qt.io/qt/deployment-android.html for more information.
-# They need to be set before the find_package(...) calls below.
-
-#if(ANDROID)
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-#    if (ANDROID_ABI STREQUAL "armeabi-v7a")
-#        set(ANDROID_EXTRA_LIBS
-#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libcrypto.so
-#            ${CMAKE_CURRENT_SOURCE_DIR}/path/to/libssl.so)
-#    endif()
-#endif()
-
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
-
-set(PROJECT_SOURCES
-        main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
-)
-
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(FCFSSimulation
-        ${PROJECT_SOURCES}
-    )
-else()
-    if(ANDROID)
-        add_library(FCFSSimulation SHARED
-            ${PROJECT_SOURCES}
-        )
-    else()
-        add_executable(FCFSSimulation
-            ${PROJECT_SOURCES}
-        )
-    endif()
+# Find required Qt packages
+find_package(Qt6 COMPONENTS Core Widgets Charts REQUIRED)
+# Fallback to Qt5 if Qt6 not found
+if (NOT Qt6_FOUND)
+    find_package(Qt5 COMPONENTS Core Widgets Charts REQUIRED)
 endif()
 
-target_link_libraries(FCFSSimulation PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+# Configure Qt options
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+# Define source files
+set(SOURCES
+    main.cpp
+    mainwindow.cpp
+    mainwindow.h
+    mainwindow.ui
+)
+
+# Create executable
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+# Link libraries
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Qt::Core
+    Qt::Widgets
+    Qt::Charts
+)
+
+# Set include directories
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Install directives
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+
+# Copy Qt DLLs to build directory (Windows only)
+if(WIN32)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DeployQt.cmake OPTIONAL)
+    if(COMMAND deploy_qt)
+        deploy_qt(${PROJECT_NAME})
+    endif()
+endif()

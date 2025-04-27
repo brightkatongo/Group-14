@@ -178,7 +178,22 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=FCFSSimulation
+CMAKE_PROJECT_NAME:STATIC=FCFSSchedulerSimulation
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION:STATIC=1.0.0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_MAJOR:STATIC=1
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_MINOR:STATIC=0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_PATCH:STATIC=0
+
+//Value Computed by CMake
+CMAKE_PROJECT_VERSION_TWEAK:STATIC=
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=C:/Qt/Tools/mingw1310_64/bin/ranlib.exe
@@ -262,6 +277,12 @@ CMAKE_TOOLCHAIN_FILE:FILEPATH=c:/Qt/6.9.0/mingw_64/lib/cmake/Qt6/qt.toolchain.cm
 // during the make.  This is useful for debugging only. With Visual
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
+
+//Value Computed by CMake
+FCFSSchedulerSimulation_BINARY_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14/build
+
+//Value Computed by CMake
+FCFSSchedulerSimulation_SOURCE_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14
 
 //Value Computed by CMake
 FCFSScheduler_BINARY_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14/build
