@@ -3,26 +3,24 @@
 
 #include <QMainWindow>
 #include <QVector>
+#include <QMap>
 #include <QTimer>
 #include <QGraphicsScene>
 
-namespace Ui {
-class MainWindow;
-}
+QT_BEGIN_NAMESPACE
+namespace Ui { class MainWindow; }
+QT_END_NAMESPACE
 
 struct Process {
     int id;
     int arrivalTime;
     int burstTime;
-    int waitingTime;
-    int turnaroundTime;
     int completionTime;
+    int turnaroundTime;
+    int waitingTime;
     int remainingTime;
-    
-    Process(int _id, int _arrival, int _burst) : 
-        id(_id), arrivalTime(_arrival), burstTime(_burst), 
-        waitingTime(0), turnaroundTime(0), completionTime(0), 
-        remainingTime(_burst) {}
+    bool isCompleted;
+    QColor color;
 };
 
 class MainWindow : public QMainWindow
@@ -30,38 +28,35 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
-    void addProcess();
-    void startSimulation();
-    void resetSimulation();
+    void on_addProcessButton_clicked();
+    void on_startSimulationButton_clicked();
+    void on_clearButton_clicked();
+    void on_resetButton_clicked();
     void updateSimulation();
+    void drawGanttChart();
+    void drawMetricsChart();
 
 private:
     Ui::MainWindow *ui;
-    
-    // Simulation data
     QVector<Process> processes;
-    QVector<Process> readyQueue;
-    Process *currentProcess;
-    bool simulationRunning;
-    int currentTime;
-    int nextProcessIndex;
-    
-    // Graphics
-    QGraphicsScene *ganttChart;
     QTimer *simulationTimer;
+    int currentTime;
+    int currentProcessIndex;
+    QGraphicsScene *ganttChartScene;
+    QGraphicsScene *metricsScene;
+    bool simulationRunning;
+    bool simulationComplete;
     
-    // Helper methods
-    void setupConnections();
+    void setupCharts();
     void updateProcessTable();
-    void updateResultTable();
-    void updateStatistics();
-    void drawGanttChart();
-    QColor getProcessColor(int processId);
+    void calculateMetrics();
+    QColor getRandomColor();
     void sortProcessesByArrivalTime();
+    void resetSimulation();
 };
 
 #endif // MAINWINDOW_H

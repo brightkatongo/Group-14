@@ -178,7 +178,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=FCFSScheduler
+CMAKE_PROJECT_NAME:STATIC=FCFSSimulation
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=C:/Qt/Tools/mingw1310_64/bin/ranlib.exe
@@ -268,6 +268,12 @@ FCFSScheduler_BINARY_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14/build
 
 //Value Computed by CMake
 FCFSScheduler_SOURCE_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14
+
+//Value Computed by CMake
+FCFSSimulation_BINARY_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14/build
+
+//Value Computed by CMake
+FCFSSimulation_SOURCE_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14
 
 //Additional directories where find(Qt6 ...) host Qt components
 // are searched

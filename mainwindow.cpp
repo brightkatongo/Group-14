@@ -1,71 +1,112 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+
+#include <QRandomGenerator>
 #include <QMessageBox>
 #include <QGraphicsRectItem>
 #include <QGraphicsTextItem>
-#include <QBrush>
-#include <QPen>
-#include <QFont>
+#include <QGraphicsLineItem>
+#include <QDebug>
+#include <algorithm>
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    currentProcess(nullptr),
-    simulationRunning(false),
-    currentTime(0),
-    nextProcessIndex(0)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+    , currentTime(0)
+    , currentProcessIndex(-1)
+    , simulationRunning(false)
+    , simulationComplete(false)
 {
     ui->setupUi(this);
     
-    // Initialize graphics scene
-    ganttChart = new QGraphicsScene(this);
-    ui->ganttChartView->setScene(ganttChart);
+    // Set up the process table
+    ui->processTable->setColumnCount(7);
+    ui->processTable->setHorizontalHeaderLabels({"Process ID", "Arrival Time", "Burst Time", 
+                                              "Completion Time", "Turnaround Time", "Waiting Time", "Remaining Time"});
     
-    // Initialize timer
+    // Set up the simulation timer
     simulationTimer = new QTimer(this);
-    simulationTimer->setInterval(500); // 500ms
+    connect(simulationTimer, &QTimer::timeout, this, &MainWindow::updateSimulation);
     
-    setupConnections();
+    // Set up the charts
+    setupCharts();
+    
+    // Disable some buttons initially
+    ui->startSimulationButton->setEnabled(false);
+    ui->resetButton->setEnabled(false);
 }
 
 MainWindow::~MainWindow()
 {
-    if (currentProcess) delete currentProcess;
     delete ui;
 }
 
-void MainWindow::setupConnections()
+void MainWindow::setupCharts()
 {
-    connect(ui->addButton, &QPushButton::clicked, this, &MainWindow::addProcess);
-    connect(ui->startButton, &QPushButton::clicked, this, &MainWindow::startSimulation);
-    connect(ui->resetButton, &QPushButton::clicked, this, &MainWindow::resetSimulation);
-    connect(simulationTimer, &QTimer::timeout, this, &MainWindow::updateSimulation);
+    // Set up Gantt chart
+    ganttChartScene = new QGraphicsScene(this);
+    ui->ganttChartView->setScene(ganttChartScene);
+    
+    // Set up metrics chart
+    metricsScene = new QGraphicsScene(this);
+    ui->metricsView->setScene(metricsScene);
 }
 
-void MainWindow::addProcess()
+void MainWindow::on_addProcessButton_clicked()
 {
-    if (simulationRunning) {
-        QMessageBox::warning(this, "Warning", "Cannot add processes while simulation is running.");
+    // Get process details from the UI
+    bool ok;
+    int processId = ui->processIdEdit->text().toInt(&ok);
+    if (!ok || processId < 0) {
+        QMessageBox::warning(this, "Invalid Input", "Process ID must be a positive integer.");
         return;
     }
     
-    int id = ui->processIdSpinBox->value();
-    int arrival = ui->arrivalTimeSpinBox->value();
-    int burst = ui->burstTimeSpinBox->value();
-    
     // Check if process ID already exists
-    for (const Process &p : processes) {
-        if (p.id == id) {
-            QMessageBox::warning(this, "Warning", "Process ID already exists. Please use a different ID.");
+    for (const Process& p : processes) {
+        if (p.id == processId) {
+            QMessageBox::warning(this, "Invalid Input", "Process ID already exists.");
             return;
         }
     }
     
-    processes.append(Process(id, arrival, burst));
+    int arrivalTime = ui->arrivalTimeEdit->text().toInt(&ok);
+    if (!ok || arrivalTime < 0) {
+        QMessageBox::warning(this, "Invalid Input", "Arrival time must be a non-negative integer.");
+        return;
+    }
+    
+    int burstTime = ui->burstTimeEdit->text().toInt(&ok);
+    if (!ok || burstTime <= 0) {
+        QMessageBox::warning(this, "Invalid Input", "Burst time must be a positive integer.");
+        return;
+    }
+    
+    // Create a new process
+    Process newProcess;
+    newProcess.id = processId;
+    newProcess.arrivalTime = arrivalTime;
+    newProcess.burstTime = burstTime;
+    newProcess.completionTime = -1;
+    newProcess.turnaroundTime = -1;
+    newProcess.waitingTime = -1;
+    newProcess.remainingTime = burstTime;
+    newProcess.isCompleted = false;
+    newProcess.color = getRandomColor();
+    
+    // Add the process to the list
+    processes.push_back(newProcess);
+    
+    // Update the table
     updateProcessTable();
     
-    // Increment process ID for convenience
-    ui->processIdSpinBox->setValue(id + 1);
+    // Clear the input fields
+    ui->processIdEdit->clear();
+    ui->arrivalTimeEdit->clear();
+    ui->burstTimeEdit->clear();
+    
+    // Enable the start button if at least one process exists
+    ui->startSimulationButton->setEnabled(true);
 }
 
 void MainWindow::updateProcessTable()
@@ -73,299 +114,425 @@ void MainWindow::updateProcessTable()
     ui->processTable->setRowCount(processes.size());
     
     for (int i = 0; i < processes.size(); i++) {
-        QTableWidgetItem *idItem = new QTableWidgetItem(QString::number(processes[i].id));
-        QTableWidgetItem *arrivalItem = new QTableWidgetItem(QString::number(processes[i].arrivalTime));
-        QTableWidgetItem *burstItem = new QTableWidgetItem(QString::number(processes[i].burstTime));
+        const Process& p = processes[i];
         
-        ui->processTable->setItem(i, 0, idItem);
-        ui->processTable->setItem(i, 1, arrivalItem);
-        ui->processTable->setItem(i, 2, burstItem);
+        // Set the table items
+        ui->processTable->setItem(i, 0, new QTableWidgetItem(QString::number(p.id)));
+        ui->processTable->setItem(i, 1, new QTableWidgetItem(QString::number(p.arrivalTime)));
+        ui->processTable->setItem(i, 2, new QTableWidgetItem(QString::number(p.burstTime)));
         
-        // Center align cells
-        idItem->setTextAlignment(Qt::AlignCenter);
-        arrivalItem->setTextAlignment(Qt::AlignCenter);
-        burstItem->setTextAlignment(Qt::AlignCenter);
+        // Set completion time, turnaround time, and waiting time if available
+        if (p.completionTime != -1) {
+            ui->processTable->setItem(i, 3, new QTableWidgetItem(QString::number(p.completionTime)));
+            ui->processTable->setItem(i, 4, new QTableWidgetItem(QString::number(p.turnaroundTime)));
+            ui->processTable->setItem(i, 5, new QTableWidgetItem(QString::number(p.waitingTime)));
+        } else {
+            ui->processTable->setItem(i, 3, new QTableWidgetItem("-"));
+            ui->processTable->setItem(i, 4, new QTableWidgetItem("-"));
+            ui->processTable->setItem(i, 5, new QTableWidgetItem("-"));
+        }
+        
+        // Set remaining time
+        ui->processTable->setItem(i, 6, new QTableWidgetItem(QString::number(p.remainingTime)));
     }
 }
 
-void MainWindow::startSimulation()
+void MainWindow::on_startSimulationButton_clicked()
 {
-    if (processes.isEmpty()) {
-        QMessageBox::warning(this, "Warning", "Please add at least one process before starting simulation.");
+    if (processes.empty()) {
+        QMessageBox::warning(this, "Error", "No processes added yet.");
         return;
     }
     
     if (!simulationRunning) {
-        simulationRunning = true;
-        ui->startButton->setText("Pause Simulation");
-        ui->addButton->setEnabled(false);
+        // If simulation is not already running, start it
+        if (simulationComplete) {
+            resetSimulation();
+        }
         
-        // Sort processes by arrival time for FCFS
+        // Sort processes by arrival time
         sortProcessesByArrivalTime();
         
-        // Start simulation timer
-        simulationTimer->start();
+        // Update UI
+        ui->statusLabel->setText("Simulation running...");
+        ui->startSimulationButton->setText("Pause");
+        ui->addProcessButton->setEnabled(false);
+        ui->clearButton->setEnabled(false);
+        ui->resetButton->setEnabled(true);
+        
+        // Start the timer
+        simulationRunning = true;
+        simulationTimer->start(1000); // Update every 1 second
     } else {
-        simulationRunning = false;
-        ui->startButton->setText("Resume Simulation");
+        // If simulation is running, pause it
         simulationTimer->stop();
+        simulationRunning = false;
+        ui->startSimulationButton->setText("Resume");
+        ui->statusLabel->setText("Simulation paused.");
     }
+}
+
+void MainWindow::on_clearButton_clicked()
+{
+    // Clear all processes
+    processes.clear();
+    
+    // Reset UI
+    ui->processTable->setRowCount(0);
+    ui->startSimulationButton->setEnabled(false);
+    ui->resetButton->setEnabled(false);
+    ui->statusLabel->setText("No processes added.");
+    
+    // Clear charts
+    ganttChartScene->clear();
+    metricsScene->clear();
+    
+    // Reset simulation variables
+    currentTime = 0;
+    currentProcessIndex = -1;
+    simulationRunning = false;
+    simulationComplete = false;
+    
+    ui->timeLabel->setText("Current Time: 0");
+    ui->currentProcessLabel->setText("Current Process: None");
+    ui->avgTurnaroundLabel->setText("Average Turnaround Time: -");
+    ui->avgWaitingLabel->setText("Average Waiting Time: -");
+}
+
+void MainWindow::on_resetButton_clicked()
+{
+    resetSimulation();
+    ui->statusLabel->setText("Simulation reset.");
+    ui->startSimulationButton->setText("Start Simulation");
+    ui->addProcessButton->setEnabled(true);
+    ui->clearButton->setEnabled(true);
 }
 
 void MainWindow::resetSimulation()
 {
+    // Stop the timer
     simulationTimer->stop();
     simulationRunning = false;
-    ui->startButton->setText("Start Simulation");
-    ui->addButton->setEnabled(true);
-    
-    // Reset simulation state
-    currentTime = 0;
-    nextProcessIndex = 0;
-    readyQueue.clear();
-    if (currentProcess) {
-        delete currentProcess;
-        currentProcess = nullptr;
-    }
+    simulationComplete = false;
     
     // Reset process data
-    for (int i = 0; i < processes.size(); i++) {
-        processes[i].waitingTime = 0;
-        processes[i].turnaroundTime = 0;
-        processes[i].completionTime = 0;
-        processes[i].remainingTime = processes[i].burstTime;
+    for (auto& p : processes) {
+        p.completionTime = -1;
+        p.turnaroundTime = -1;
+        p.waitingTime = -1;
+        p.remainingTime = p.burstTime;
+        p.isCompleted = false;
     }
     
-    ui->currentTimeLabel->setText("Current Time: 0");
-    ui->avgWaitingTimeLabel->setText("Average Waiting Time: 0.00");
-    ui->avgTurnaroundTimeLabel->setText("Average Turnaround Time: 0.00");
+    // Update the table
+    updateProcessTable();
     
-    // Clear gantt chart
-    ganttChart->clear();
+    // Reset simulation variables
+    currentTime = 0;
+    currentProcessIndex = -1;
     
-    // Clear result table
-    ui->resultTable->setRowCount(0);
+    // Update UI
+    ui->timeLabel->setText("Current Time: 0");
+    ui->currentProcessLabel->setText("Current Process: None");
+    ui->avgTurnaroundLabel->setText("Average Turnaround Time: -");
+    ui->avgWaitingLabel->setText("Average Waiting Time: -");
+    
+    // Clear charts
+    ganttChartScene->clear();
+    metricsScene->clear();
 }
 
 void MainWindow::updateSimulation()
 {
-    // Check if new processes have arrived
-    while (nextProcessIndex < processes.size() && processes[nextProcessIndex].arrivalTime <= currentTime) {
-        readyQueue.append(processes[nextProcessIndex]);
-        nextProcessIndex++;
-    }
-    
-    // If no current process, get the next one from ready queue
-    if (!currentProcess && !readyQueue.isEmpty()) {
-        currentProcess = new Process(readyQueue.first());
-        readyQueue.removeFirst();
-        
-        // Calculate waiting time when process starts execution
-        currentProcess->waitingTime = currentTime - currentProcess->arrivalTime;
-    }
-    
-    // If a process is running, update its remaining time
-    if (currentProcess) {
-        currentProcess->remainingTime--;
-        
-        // Update gantt chart
-        drawGanttChart();
-        
-        // If process is complete
-        if (currentProcess->remainingTime <= 0) {
-            currentProcess->completionTime = currentTime + 1;
-            currentProcess->turnaroundTime = currentProcess->completionTime - currentProcess->arrivalTime;
-            
-            // Update the original process in the processes list
-            for (int i = 0; i < processes.size(); i++) {
-                if (processes[i].id == currentProcess->id) {
-                    processes[i].waitingTime = currentProcess->waitingTime;
-                    processes[i].turnaroundTime = currentProcess->turnaroundTime;
-                    processes[i].completionTime = currentProcess->completionTime;
-                    break;
-                }
-            }
-            
-            // Update results table
-            updateResultTable();
-            updateStatistics();
-            
-            // Delete completed process
-            delete currentProcess;
-            currentProcess = nullptr;
-        }
+    if (simulationComplete) {
+        simulationTimer->stop();
+        simulationRunning = false;
+        ui->startSimulationButton->setText("Start Simulation");
+        ui->statusLabel->setText("Simulation complete.");
+        return;
     }
     
     // Update current time
     currentTime++;
-    ui->currentTimeLabel->setText("Current Time: " + QString::number(currentTime));
+    ui->timeLabel->setText("Current Time: " + QString::number(currentTime));
     
-    // Check if simulation is complete
-    if (nextProcessIndex >= processes.size() && readyQueue.isEmpty() && !currentProcess) {
-        simulationTimer->stop();
-        simulationRunning = false;
-        ui->startButton->setText("Start Simulation");
-        QMessageBox::information(this, "Simulation Complete", "FCFS scheduling simulation has completed.");
+    // Find the next process to execute if none is currently running
+    if (currentProcessIndex == -1) {
+        for (int i = 0; i < processes.size(); i++) {
+            if (!processes[i].isCompleted && processes[i].arrivalTime <= currentTime) {
+                currentProcessIndex = i;
+                ui->currentProcessLabel->setText("Current Process: P" + QString::number(processes[i].id));
+                break;
+            }
+        }
     }
+    
+    // Process execution
+    if (currentProcessIndex != -1) {
+        Process& currentProcess = processes[currentProcessIndex];
+        
+        // Execute one time unit
+        currentProcess.remainingTime--;
+        
+        // Check if process is completed
+        if (currentProcess.remainingTime == 0) {
+            currentProcess.isCompleted = true;
+            currentProcess.completionTime = currentTime;
+            currentProcess.turnaroundTime = currentProcess.completionTime - currentProcess.arrivalTime;
+            currentProcess.waitingTime = currentProcess.turnaroundTime - currentProcess.burstTime;
+            
+            // Find the next process
+            currentProcessIndex = -1;
+            for (int i = 0; i < processes.size(); i++) {
+                if (!processes[i].isCompleted && processes[i].arrivalTime <= currentTime) {
+                    currentProcessIndex = i;
+                    ui->currentProcessLabel->setText("Current Process: P" + QString::number(processes[i].id));
+                    break;
+                }
+            }
+            
+            if (currentProcessIndex == -1) {
+                ui->currentProcessLabel->setText("Current Process: None");
+            }
+        }
+    } else {
+        ui->currentProcessLabel->setText("Current Process: None (CPU Idle)");
+    }
+    
+    // Update the process table
+    updateProcessTable();
+    
+    // Draw Gantt chart
+    drawGanttChart();
+    
+    // Check if all processes are completed
+    bool allCompleted = true;
+    for (const Process& p : processes) {
+        if (!p.isCompleted) {
+            allCompleted = false;
+            break;
+        }
+    }
+    
+    if (allCompleted) {
+        simulationComplete = true;
+        calculateMetrics();
+        drawMetricsChart();
+    }
+}
+
+void MainWindow::calculateMetrics()
+{
+    float totalTurnaround = 0.0f;
+    float totalWaiting = 0.0f;
+    
+    for (const Process& p : processes) {
+        totalTurnaround += p.turnaroundTime;
+        totalWaiting += p.waitingTime;
+    }
+    
+    float avgTurnaround = totalTurnaround / processes.size();
+    float avgWaiting = totalWaiting / processes.size();
+    
+    ui->avgTurnaroundLabel->setText("Average Turnaround Time: " + QString::number(avgTurnaround, 'f', 2));
+    ui->avgWaitingLabel->setText("Average Waiting Time: " + QString::number(avgWaiting, 'f', 2));
 }
 
 void MainWindow::drawGanttChart()
 {
-    const int unit = 30; // Width of one time unit
-    const int height = 50; // Height of the gantt chart bar
+    ganttChartScene->clear();
     
-    // Clear previous chart
-    ganttChart->clear();
+    int rectWidth = 30;
+    int rectHeight = 40;
+    int xOffset = 10;
+    int yOffset = 20;
+    int textOffset = 10;
     
-    // Draw time scale
+    // Draw time axis
+    ganttChartScene->addLine(xOffset, yOffset + rectHeight + 10, xOffset + currentTime * rectWidth, yOffset + rectHeight + 10);
+    
+    // Draw time markers
     for (int t = 0; t <= currentTime; t++) {
-        ganttChart->addLine(t * unit, height + 5, t * unit, height + 15);
-        QGraphicsTextItem *timeText = ganttChart->addText(QString::number(t));
-        timeText->setPos(t * unit - 5, height + 15);
+        int x = xOffset + t * rectWidth;
+        ganttChartScene->addLine(x, yOffset + rectHeight + 5, x, yOffset + rectHeight + 15);
+        QGraphicsTextItem* timeText = ganttChartScene->addText(QString::number(t));
+        timeText->setPos(x - timeText->boundingRect().width() / 2, yOffset + rectHeight + 15);
     }
     
-    // Track the last drawn position
-    int lastProcessId = -1;
-    int startTime = 0;
-    
-    // Draw processes that have started or completed
+    // Track the current process for each time unit
+    QMap<int, int> timeToProcessMap;
     for (int t = 0; t <= currentTime; t++) {
-        int processId = -1;
-        
-        // Find which process was running at time t
-        for (const Process &p : processes) {
-            if (p.completionTime > 0 && p.completionTime - p.burstTime <= t && p.completionTime > t) {
-                processId = p.id;
-                break;
-            }
-        }
-        
-        // Also check current process
-        if (currentProcess && t >= (currentTime - (currentProcess->burstTime - currentProcess->remainingTime))) {
-            processId = currentProcess->id;
-        }
-        
-        // If process changes or we're at the end
-        if ((processId != lastProcessId || t == currentTime) && lastProcessId != -1) {
-            QBrush brush(getProcessColor(lastProcessId));
-            QGraphicsRectItem *rect = ganttChart->addRect(
-                startTime * unit, 0, (t - startTime) * unit, height, QPen(Qt::black), brush);
-                
-            // Add process label
-            QGraphicsTextItem *processText = ganttChart->addText("P" + QString::number(lastProcessId));
-            processText->setDefaultTextColor(Qt::white);
-            QFont font = processText->font();
-            font.setBold(true);
-            processText->setFont(font);
-            
-            // Center the text in the rectangle
-            QRectF textRect = processText->boundingRect();
-            qreal x = startTime * unit + ((t - startTime) * unit - textRect.width()) / 2;
-            qreal y = (height - textRect.height()) / 2;
-            processText->setPos(x, y);
-            
-            // Update for next segment
-            startTime = t;
-        }
-        
-        if (processId != lastProcessId && processId != -1) {
-            startTime = t;
-        }
-        
-        lastProcessId = processId;
+        timeToProcessMap[t] = -1; // -1 means idle
     }
     
-    // Adjust scene rectangle
-    ganttChart->setSceneRect(ganttChart->itemsBoundingRect());
-    ui->ganttChartView->fitInView(ganttChart->sceneRect(), Qt::KeepAspectRatio);
-    ui->ganttChartView->update();
-}
-
-QColor MainWindow::getProcessColor(int processId)
-{
-    // Generate a color based on process ID
-    const QVector<QColor> colors = {
-        QColor(255, 99, 71),   // Tomato
-        QColor(30, 144, 255),  // DodgerBlue
-        QColor(50, 205, 50),   // LimeGreen
-        QColor(255, 165, 0),   // Orange
-        QColor(138, 43, 226),  // BlueViolet
-        QColor(0, 139, 139),   // DarkCyan
-        QColor(255, 20, 147),  // DeepPink
-        QColor(184, 134, 11),  // DarkGoldenrod
-        QColor(70, 130, 180),  // SteelBlue
-        QColor(139, 69, 19),   // SaddleBrown
-    };
-    
-    return colors[processId % colors.size()];
-}
-
-void MainWindow::updateResultTable()
-{
-    ui->resultTable->setRowCount(processes.size());
+    // Fill the map based on process execution
+    int lastCompletedTime = 0;
     
     for (int i = 0; i < processes.size(); i++) {
-        QTableWidgetItem *idItem = new QTableWidgetItem(QString::number(processes[i].id));
-        QTableWidgetItem *waitingItem = new QTableWidgetItem(
-            processes[i].completionTime > 0 ? QString::number(processes[i].waitingTime) : "-");
-        QTableWidgetItem *turnaroundItem = new QTableWidgetItem(
-            processes[i].completionTime > 0 ? QString::number(processes[i].turnaroundTime) : "-");
-        QTableWidgetItem *completionItem = new QTableWidgetItem(
-            processes[i].completionTime > 0 ? QString::number(processes[i].completionTime) : "-");
-        QTableWidgetItem *responseItem = new QTableWidgetItem(
-            processes[i].completionTime > 0 ? QString::number(processes[i].waitingTime) : "-");
-        
-        ui->resultTable->setItem(i, 0, idItem);
-        ui->resultTable->setItem(i, 1, waitingItem);
-        ui->resultTable->setItem(i, 2, turnaroundItem);
-        ui->resultTable->setItem(i, 3, completionItem);
-        ui->resultTable->setItem(i, 4, responseItem);
-        
-        // Center align cells
-        idItem->setTextAlignment(Qt::AlignCenter);
-        waitingItem->setTextAlignment(Qt::AlignCenter);
-        turnaroundItem->setTextAlignment(Qt::AlignCenter);
-        completionItem->setTextAlignment(Qt::AlignCenter);
-        responseItem->setTextAlignment(Qt::AlignCenter);
-    }
-}
-
-void MainWindow::updateStatistics()
-{
-    int completedProcesses = 0;
-    double totalWaitingTime = 0;
-    double totalTurnaroundTime = 0;
-    
-    for (const Process &p : processes) {
-        if (p.completionTime > 0) {
-            completedProcesses++;
-            totalWaitingTime += p.waitingTime;
-            totalTurnaroundTime += p.turnaroundTime;
+        const Process& p = processes[i];
+        if (p.isCompleted) {
+            int startTime = p.completionTime - p.burstTime;
+            for (int t = startTime; t < p.completionTime; t++) {
+                if (t >= 0) {
+                    timeToProcessMap[t] = i;
+                }
+            }
+            lastCompletedTime = std::max(lastCompletedTime, p.completionTime);
         }
     }
     
-    if (completedProcesses > 0) {
-        double avgWaiting = totalWaitingTime / completedProcesses;
-        double avgTurnaround = totalTurnaroundTime / completedProcesses;
-        
-        ui->avgWaitingTimeLabel->setText("Average Waiting Time: " + QString::number(avgWaiting, 'f', 2));
-        ui->avgTurnaroundTimeLabel->setText("Average Turnaround Time: " + QString::number(avgTurnaround, 'f', 2));
+    // For the current executing process
+    if (currentProcessIndex != -1) {
+        const Process& currentP = processes[currentProcessIndex];
+        int startTime = currentTime - (currentP.burstTime - currentP.remainingTime);
+        for (int t = startTime; t < currentTime; t++) {
+            if (t >= 0) {
+                timeToProcessMap[t] = currentProcessIndex;
+            }
+        }
     }
+    
+    // Draw the Gantt chart based on the map
+    int lastProcessIndex = -2; // Different from idle (-1)
+    int startX = xOffset;
+    
+    for (int t = 0; t <= currentTime; t++) {
+        int processIndex = timeToProcessMap[t];
+        
+        if (processIndex != lastProcessIndex || t == currentTime) {
+            // Draw the previous block if there's a change or we reached the end
+            if (lastProcessIndex != -2 && t > 0) {
+                int width = (xOffset + t * rectWidth) - startX;
+                
+                // Draw the rectangle
+                QGraphicsRectItem* rect;
+                if (lastProcessIndex == -1) {
+                    // Idle time
+                    rect = ganttChartScene->addRect(startX, yOffset, width, rectHeight, QPen(Qt::black), QBrush(Qt::lightGray));
+                    QGraphicsTextItem* idleText = ganttChartScene->addText("Idle");
+                    idleText->setPos(startX + width/2 - idleText->boundingRect().width()/2, 
+                                   yOffset + rectHeight/2 - idleText->boundingRect().height()/2);
+                } else {
+                    // Process execution
+                    const Process& p = processes[lastProcessIndex];
+                    rect = ganttChartScene->addRect(startX, yOffset, width, rectHeight, QPen(Qt::black), QBrush(p.color));
+                    QGraphicsTextItem* processText = ganttChartScene->addText("P" + QString::number(p.id));
+                    processText->setPos(startX + width/2 - processText->boundingRect().width()/2, 
+                                      yOffset + rectHeight/2 - processText->boundingRect().height()/2);
+                }
+            }
+            
+            // Start a new block
+            startX = xOffset + t * rectWidth;
+            lastProcessIndex = processIndex;
+        }
+    }
+    
+    ui->ganttChartView->fitInView(ganttChartScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+    ui->ganttChartView->centerOn(ganttChartScene->itemsBoundingRect().center());
+}
+
+void MainWindow::drawMetricsChart()
+{
+    if (!simulationComplete) return;
+    
+    metricsScene->clear();
+    
+    int barWidth = 40;
+    int maxHeight = 200;
+    int xOffset = 50;
+    int yOffset = 250;
+    int spacing = 80;
+    
+    // Find maximum values for scaling
+    int maxTurnaround = 0;
+    int maxWaiting = 0;
+    int maxBurst = 0;
+    
+    for (const Process& p : processes) {
+        maxTurnaround = std::max(maxTurnaround, p.turnaroundTime);
+        maxWaiting = std::max(maxWaiting, p.waitingTime);
+        maxBurst = std::max(maxBurst, p.burstTime);
+    }
+    
+    int maxMetric = std::max({maxTurnaround, maxWaiting, maxBurst});
+    
+    // Draw axes
+    metricsScene->addLine(xOffset, yOffset, xOffset + (processes.size() * spacing) + 50, yOffset); // X-axis
+    metricsScene->addLine(xOffset, yOffset, xOffset, yOffset - maxHeight - 50); // Y-axis
+    
+    // Add axis labels
+    QGraphicsTextItem* yLabel = metricsScene->addText("Time");
+    yLabel->setPos(xOffset - 40, yOffset - maxHeight - 60);
+    
+    QGraphicsTextItem* xLabel = metricsScene->addText("Process ID");
+    xLabel->setPos(xOffset + (processes.size() * spacing) / 2 - 30, yOffset + 20);
+    
+    // Draw scale on Y-axis
+    int scaleStep = maxMetric > 10 ? maxMetric / 10 : 1;
+    for (int i = 0; i <= maxMetric; i += scaleStep) {
+        int y = yOffset - (i * maxHeight / maxMetric);
+        metricsScene->addLine(xOffset - 5, y, xOffset, y);
+        QGraphicsTextItem* scaleText = metricsScene->addText(QString::number(i));
+        scaleText->setPos(xOffset - 25, y - 10);
+    }
+    
+    // Draw legend
+    int legendX = xOffset + (processes.size() * spacing) + 60;
+    int legendY = yOffset - maxHeight;
+    
+    QGraphicsRectItem* burstRect = metricsScene->addRect(legendX, legendY, 20, 20, QPen(Qt::black), QBrush(Qt::blue));
+    QGraphicsTextItem* burstText = metricsScene->addText("Burst Time");
+    burstText->setPos(legendX + 30, legendY);
+    
+    QGraphicsRectItem* waitRect = metricsScene->addRect(legendX, legendY + 30, 20, 20, QPen(Qt::black), QBrush(Qt::green));
+    QGraphicsTextItem* waitText = metricsScene->addText("Waiting Time");
+    waitText->setPos(legendX + 30, legendY + 30);
+    
+    QGraphicsRectItem* turnRect = metricsScene->addRect(legendX, legendY + 60, 20, 20, QPen(Qt::black), QBrush(Qt::red));
+    QGraphicsTextItem* turnText = metricsScene->addText("Turnaround Time");
+    turnText->setPos(legendX + 30, legendY + 60);
+    
+    // Draw bars for each process
+    for (int i = 0; i < processes.size(); i++) {
+        const Process& p = processes[i];
+        int x = xOffset + i * spacing;
+        
+        // Draw burst time bar
+        int burstHeight = p.burstTime * maxHeight / maxMetric;
+        metricsScene->addRect(x, yOffset - burstHeight, barWidth, burstHeight, QPen(Qt::black), QBrush(Qt::blue));
+        
+        // Draw waiting time bar
+        int waitingHeight = p.waitingTime * maxHeight / maxMetric;
+        metricsScene->addRect(x + barWidth, yOffset - waitingHeight, barWidth, waitingHeight, QPen(Qt::black), QBrush(Qt::green));
+        
+        // Draw turnaround time bar
+        int turnaroundHeight = p.turnaroundTime * maxHeight / maxMetric;
+        metricsScene->addRect(x + 2 * barWidth, yOffset - turnaroundHeight, barWidth, turnaroundHeight, QPen(Qt::black), QBrush(Qt::red));
+        
+        // Add process ID label
+        QGraphicsTextItem* idText = metricsScene->addText("P" + QString::number(p.id));
+        idText->setPos(x + barWidth, yOffset + 5);
+    }
+    
+    ui->metricsView->fitInView(metricsScene->itemsBoundingRect(), Qt::KeepAspectRatio);
+    ui->metricsView->centerOn(metricsScene->itemsBoundingRect().center());
+}
+
+QColor MainWindow::getRandomColor()
+{
+    return QColor(
+        QRandomGenerator::global()->bounded(100, 240),  // Red
+        QRandomGenerator::global()->bounded(100, 240),  // Green
+        QRandomGenerator::global()->bounded(100, 240)   // Blue
+    );
 }
 
 void MainWindow::sortProcessesByArrivalTime()
 {
-    // Sort by arrival time (FCFS requirement)
-    for (int i = 0; i < processes.size(); i++) {
-        for (int j = 0; j < processes.size() - i - 1; j++) {
-            if (processes[j].arrivalTime > processes[j + 1].arrivalTime) {
-                Process temp = processes[j];
-                processes[j] = processes[j + 1];
-                processes[j + 1] = temp;
-            }
-        }
-    }
+    std::sort(processes.begin(), processes.end(), [](const Process& a, const Process& b) {
+        return a.arrivalTime < b.arrivalTime;
+    });
     
-    // Update process table after sorting
     updateProcessTable();
 }
