@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Advanced FCFS Scheduler Simulation</string>
+   <string>FCFS Scheduler Simulation</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -305,7 +305,7 @@
       </widget>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="processTableTab">
         <attribute name="title">
@@ -335,7 +335,7 @@
          <item>
           <widget class="QTabWidget" name="chartsTabWidget">
            <property name="currentIndex">
-            <number>3</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="cpuUtilizationTab">
             <attribute name="title">
