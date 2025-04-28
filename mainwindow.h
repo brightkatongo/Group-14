@@ -11,6 +11,7 @@
 #include <QBarSet>
 #include <QChartView>
 #include <QPieSeries>
+#include <QMap>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -29,6 +30,7 @@ struct Process {
     int startTime;
     QString status;  // "Waiting", "Running", "Completed"
     QColor color;
+    bool isCompleted;
 };
 
 class MainWindow : public QMainWindow
@@ -57,19 +59,23 @@ private slots:
     void on_actionReset_triggered();
     void on_actionAbout_triggered();
     void on_actionDocumentation_triggered();
+    void on_clearButton_clicked();
 
     void simulationStep();
     void updateGanttChart();
     void updatePerformanceCharts();
+    void updateSimulation();
 
 private:
     Ui::MainWindow *ui;
     QVector<Process> processes;
     QGraphicsScene *ganttChartScene;
+    QGraphicsScene *metricsScene;
     QTimer *simulationTimer;
     int currentTime;
     int currentProcessIndex;
     bool simulationRunning;
+    bool simulationComplete;
     QMap<int, QColor> processColors;
     
     // Chart related members
@@ -91,6 +97,7 @@ private:
     void setupProcessTable();
     void setupGanttChart();
     void setupPerformanceCharts();
+    void setupCharts();
     void updateProcessTable();
     void updateProcessDetails(int processIndex);
     void updateSimulationStats();
@@ -102,5 +109,9 @@ private:
     void pauseSimulation();
     void finishSimulation();
     bool validateProcessInput();
+    void calculateMetrics();
+    void drawGanttChart();
+    void drawMetricsChart();
 };
+
 #endif // MAINWINDOW_H

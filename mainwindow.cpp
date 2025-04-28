@@ -10,6 +10,11 @@
 #include <QVBoxLayout>
 #include <QtMath>
 #include <QLabel>
+#include <QTimer>
+#include <QGraphicsScene>
+#include <QGraphicsRectItem>
+#include <QGraphicsTextItem>
+#include <QMessageBox>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
