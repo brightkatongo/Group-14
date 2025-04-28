@@ -335,7 +335,7 @@
          <item>
           <widget class="QTabWidget" name="chartsTabWidget">
            <property name="currentIndex">
-            <number>5</number>
+            <number>3</number>
            </property>
            <widget class="QWidget" name="cpuUtilizationTab">
             <attribute name="title">

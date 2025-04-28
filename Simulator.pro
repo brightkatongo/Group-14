@@ -4,7 +4,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++11
 
-TARGET = FCFSSimulator
+TARGET = Simulator
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use
