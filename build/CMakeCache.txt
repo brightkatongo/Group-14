@@ -178,7 +178,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=FCFSSchedulerSimulation
+CMAKE_PROJECT_NAME:STATIC=Simulator
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION:STATIC=1.0.0
@@ -352,6 +352,12 @@ Qt6ZlibPrivate_DIR:PATH=C:/Qt/6.9.0/mingw_64/lib/cmake/Qt6ZlibPrivate
 
 //The directory containing a CMake configuration file for Qt6.
 Qt6_DIR:PATH=C:/Qt/6.9.0/mingw_64/lib/cmake/Qt6
+
+//Value Computed by CMake
+Simulator_BINARY_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14/build
+
+//Value Computed by CMake
+Simulator_SOURCE_DIR:STATIC=C:/Users/brigh/Desktop/CS CODES/Group-14
 
 //Path to a program.
 Vulkan_GLSLC_EXECUTABLE:FILEPATH=Vulkan_GLSLC_EXECUTABLE-NOTFOUND

@@ -1,12 +1,10 @@
 <RCC>
     <qresource prefix="/">
+        <file>i18n/Simulator_en_US.qm</file>
         <file>icons/start.png</file>
         <file>icons/pause.png</file>
         <file>icons/reset.png</file>
         <file>icons/import.png</file>
         <file>icons/export.png</file>
-        <file>icons/add.png</file>
-        <file>icons/remove.png</file>
-        <file>icons/clear.png</file>
     </qresource>
 </RCC>

@@ -2,50 +2,34 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QGraphicsScene>
 #include <QTimer>
 #include <QVector>
-#include <QQueue>
-#include <QLabel>
-#include <QMap>
-#include <QColor>
-#include <QBarSet>
+#include <QTableWidgetItem>
+#include <QChart>
 #include <QBarSeries>
-#include <QPieSeries>
+#include <QBarSet>
 #include <QChartView>
-#include <QPushButton>
-#include <QGridLayout>
-#include <QTableWidget>
-#include <QFileDialog>
+#include <QPieSeries>
 
-// Forward declarations for Qt Charts
 QT_BEGIN_NAMESPACE
-namespace QtCharts {
-    class QChart;
-    class QLineSeries;
-    class QBarSeries;
-    class QPieSeries;
-    class QChartView;
-}
+namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 struct Process {
     int id;
     int arrivalTime;
     int burstTime;
-    int remainingTime;
+    int priority;
     int completionTime;
     int turnaroundTime;
     int waitingTime;
     int responseTime;
-    bool isArrived;
-    bool isCompleted;
-    bool hasStarted;
-    QColor color;  // Color for visualization
+    int remainingTime;
+    int startTime;
+    QString status;  // "Waiting", "Running", "Completed"
+    QColor color;
 };
-
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
@@ -57,62 +41,66 @@ public:
 
 private slots:
     void on_addProcessButton_clicked();
-    void on_startSimulationButton_clicked();
-    void on_resetButton_clicked();
-    void updateSimulation();
-    void on_speedSlider_valueChanged(int value);
-    void on_importButton_clicked();
-    void on_exportButton_clicked();
     void on_removeProcessButton_clicked();
     void on_clearAllButton_clicked();
-    void on_tabWidget_currentChanged(int index);
+    void on_importButton_clicked();
+    void on_exportButton_clicked();
+    void on_startSimulationButton_clicked();
+    void on_resetButton_clicked();
+    void on_speedSlider_valueChanged(int value);
     void on_processTableWidget_cellClicked(int row, int column);
+    void on_actionImport_triggered();
+    void on_actionExport_triggered();
+    void on_actionExit_triggered();
+    void on_actionStart_triggered();
+    void on_actionPause_triggered();
+    void on_actionReset_triggered();
+    void on_actionAbout_triggered();
+    void on_actionDocumentation_triggered();
+
+    void simulationStep();
+    void updateGanttChart();
+    void updatePerformanceCharts();
 
 private:
     Ui::MainWindow *ui;
     QVector<Process> processes;
-    QQueue<int> readyQueue;
+    QGraphicsScene *ganttChartScene;
+    QTimer *simulationTimer;
     int currentTime;
     int currentProcessIndex;
-    QTimer *simulationTimer;
     bool simulationRunning;
-    int simulationSpeed;
-    QMap<int, QVector<QPair<int, int>>> processTimings; // For Gantt chart
-    QVector<int> timeHistory;
-    QVector<double> cpuUtilizationHistory;
-    QVector<double> avgWaitingTimeHistory;
-    QVector<double> avgTurnaroundTimeHistory;
-    QVector<double> avgResponseTimeHistory;
-    QVector<int> completedProcessesHistory;
-    bool isFirstRun;
-    QColor getRandomColor();
+    QMap<int, QColor> processColors;
+    
+    // Chart related members
+    QChart *cpuUtilizationChart;
+    QChart *waitingTimeChart;
+    QChart *turnaroundTimeChart;
+    QChart *responseTimeChart;
+    QChart *processComparisonChart;
+    QChart *throughputChart;
+    QChart *cpuDistributionChart;
+    QChartView *cpuUtilizationView;
+    QChartView *waitingTimeView;
+    QChartView *turnaroundTimeView;
+    QChartView *responseTimeView;
+    QChartView *processComparisonView;
+    QChartView *throughputView;
+    QChartView *cpuDistributionView;
 
-    // Qt Charts
-    QtCharts::QChartView *cpuUtilizationChartView;
-    QtCharts::QChartView *waitingTimeChartView;
-    QtCharts::QChartView *turnaroundTimeChartView;
-    QtCharts::QChartView *responseTimeChartView;
-    QtCharts::QChartView *processComparisonChartView;
-    QtCharts::QChartView *throughputChartView;
-    QtCharts::QChartView *pieChartView;
-
-    void setupCharts();
-    void updateGanttChart();
+    void setupProcessTable();
+    void setupGanttChart();
+    void setupPerformanceCharts();
     void updateProcessTable();
-    void updateStatistics();
-    void updatePerformanceCharts();
-    void updateProcessComparisonChart();
-    void updatePieChart();
-    void updateThroughputChart();
-    void calculateStatistics();
+    void updateProcessDetails(int processIndex);
+    void updateSimulationStats();
+    QColor getRandomColor();
     void resetSimulation();
-    void highlightCurrentProcess();
-    void generateRandomColor(Process &process);
-    void exportResults(const QString &filename);
-    void importProcesses(const QString &filename);
-    void setupAdditionalUi();
-    void updateSimulationProgress();
-    double calculateCpuUtilization();
-    void updateDetailedProcessInfo(int row);
+    void initializeSimulation();
+    void sortProcessesByArrivalTime();
+    void startSimulation();
+    void pauseSimulation();
+    void finishSimulation();
+    bool validateProcessInput();
 };
 #endif // MAINWINDOW_H
