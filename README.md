@@ -36,7 +36,7 @@ This application simulates the First Come First Serve (FCFS) CPU scheduling algo
 Alternatively, use qmake from the command line:
 
 ```bash
-qmake FCFSSimulator.pro
+qmake Simulator.pro
 make
 ```
 
